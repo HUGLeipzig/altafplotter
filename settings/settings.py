@@ -119,14 +119,16 @@ snv_per_chr_warning = "insufficient_snvs"
 consanguinity_warning = "Consanguinity likely, handle potential UPD flags with extra care.\n\n"
 no_consanguinity = "Consanguinity unlikely.\n\n"
 
-
-
+# general
 public_tabs = ["vcf Upload", "Demo"]
 hug_tabs = ["Varvis", "vcf Upload", "Demo"]
 
 assemply_options = ["hg19", "hg38"]
 
 upd_region_file = "data/upd_regions/upd_regions.json"
+
+temp_file_prefix = "altafplotter_temp_file_"
+temp_folder = "/tmp/"
 
 # demo vcfs
 demo_vcf_file = "data/demo_files/vcfs/HG001_GRCh38_1_22_v4.2.1_exome.vcf.gz"

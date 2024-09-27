@@ -137,9 +137,8 @@ def create_vcf_tbi(vcf_file):
             )
             return False
 
-
 def save_temporary_file(vcf_file_in):
-    with NamedTemporaryFile("wb", suffix=".vcf.gz", delete=False) as vcf_file:
+    with NamedTemporaryFile("wb", prefix=settings.temp_file_prefix, suffix=".vcf.gz", delete=False) as vcf_file:
         vcf_file.write(vcf_file_in.getvalue())
     if not create_vcf_tbi(vcf_file.name):
         general_functions.delete_vcfs(vcf_file.name)

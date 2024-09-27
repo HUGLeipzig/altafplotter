@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit as st
 import os
 
+from settings import settings
+
 def to_excel(df):
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
@@ -11,7 +13,7 @@ def to_excel(df):
     worksheet = writer.sheets['Sheet1']
     format1 = workbook.add_format({'num_format': '0.00'}) 
     worksheet.set_column('A:A', None, format1)  
-    writer.save()
+    writer.close()
     processed_data = output.getvalue()
     return processed_data
 
@@ -65,16 +67,8 @@ def initialize_session_state():
         }
 
 def delete_vcfs(vcf):
-    try:
-        if isinstance(vcf,dict):
-            for key in vcf:
-                if vcf[key]:
-                    if os.path.exists(vcf[key]):
-                        os.remove(vcf[key])
-                    if os.path.exists(vcf[key]+".tbi"):
-                        os.remove(vcf[key]+".tbi")
-        if isinstance(vcf,str):
-            os.remove(vcf)
-            os.remove(vcf+".tbi")
-    except:
-        pass
+
+    for temp_file in os.listdir(settings.temp_folder):
+        temp_file_path = os.path.join(settings.temp_folder, temp_file)
+        if os.path.isfile(temp_file_path) and temp_file.startswith(settings.temp_file_prefix):
+            os.remove(temp_file_path)
