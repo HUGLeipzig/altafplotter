@@ -36,6 +36,11 @@ streamlit run main.py
 
 and your are good to go.
 
+## Create docker container
+
+`sudo podman build --build-arg VERSION=${APP_VERSION} --tag ${APP_VERSION} .`
+
+
 ## User guidelines
 
 Guidelines on how to use the altafplotter and interpretation of potential UPD findings can be found [here](https://github.com/HUGLeipzig/altafplotter/blob/main/user_guideline/user_guideline.md).
