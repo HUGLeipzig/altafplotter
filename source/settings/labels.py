@@ -36,9 +36,9 @@ legend_flag_settings = """
 
     **`inh_ratio_high:`**
 
-    *in duos:* ratio of (m/p)aternal/not (m/p)aternal SNVs per chr: **`> {inh_ratio_high_trio_cutoff}`**
+    *in duos:* ratio of (m/p)aternal/not (m/p)aternal SNVs per chr: **`> {inh_ratio_high_duo_cutoff}`**
 
-    *in trios:* ratio of maternal/paternal (or vice versa) per chr: **`> {inh_ratio_high_duo_cutoff}`**
+    *in trios:* ratio of maternal/paternal (or vice versa) per chr: **`> {inh_ratio_high_trio_cutoff}`**
 
     **ROHs:**
 
