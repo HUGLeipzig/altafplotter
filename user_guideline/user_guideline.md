@@ -44,7 +44,7 @@ Using the above mentioned parameters, each chromosome is analyzed and flagged as
 | consanguinity likely             | >=3 chromosomes >10% ROHs           | handle potential UPD flags with extra care                     | check ROHs and inheritance ratio with extra care                                          |
 | roh_high                         | > 70% ROH coverage per chromosome   | potential Isodisomy or deletions                               | check CNV analysis: if there is no deletion, validate potential Isodisomy with 2nd method |
 | roh_high_mixed                   | 20-70% ROH coverage per chromosome | potential Isodisomy or mixed UPD                               | check CNV analysis and inheritance ratio on this chromosome                               |
-| inh_ratio_high                   | in Duos >2; in Trios > 5            | potential heterodisomy                                         | validate with 2nd method                                                                  |
+| inh_ratio_high                   | in Duos >5; in Trios > 2            | potential heterodisomy                                         | validate with 2nd method                                                                  |
 | roh_high(_mixed) +inh_ratio_high | as above                            | potential isodisomy or mixed UPD                               | mixed UPD is possible, check CNV analysis for deletion and validate with 2nd methode      |
 | insufficient_snv                 | <200 SNVs/chr                       | number of SNVs is insufficient to reliably detect UPD features | exclude chromosomes from analysis                                                         |
 

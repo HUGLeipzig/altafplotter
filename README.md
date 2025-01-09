@@ -40,10 +40,12 @@ and your are good to go.
 
 `sudo podman build --build-arg VERSION=${APP_VERSION} --tag ${APP_VERSION} .`
 
-
 ## User guidelines
 
 Guidelines on how to use the altafplotter and interpretation of potential UPD findings can be found [here](https://github.com/HUGLeipzig/altafplotter/blob/main/user_guideline/user_guideline.md).
+
+**We had en error in the guidelines and the sidebar description "Flagging criteria" in the app, where the cutoffs for the inheritance ratio for trios and duos were swapped. This is now corrected.
+The correct values are: trio:2, duo:5**
 
 ## Integration with Varvis/Gepado
 
