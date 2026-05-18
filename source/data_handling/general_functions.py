@@ -59,22 +59,12 @@ def initialize_session_state():
             "father" : "",
         }
 
-<<<<<<< Updated upstream
+def delete_varvis_session_id():
+    st.session_state["session_id"] = ""
+
 def delete_vcfs(vcf):
 
     for temp_file in os.listdir(settings.temp_folder):
         temp_file_path = os.path.join(settings.temp_folder, temp_file)
         if os.path.isfile(temp_file_path) and temp_file.startswith(settings.temp_file_prefix):
             os.remove(temp_file_path)
-=======
-def delete_varvis_session_id():
-    st.session_state["session_id"] = ""
-
-def delete_vcfs(vcf_dict):
-    for key in vcf_dict:
-        if vcf_dict[key]:
-            if os.path.exists(vcf_dict[key]):
-                os.remove(vcf_dict[key])
-            if os.path.exists(vcf_dict[key]+".tbi"):
-                os.remove(vcf_dict[key]+".tbi")
->>>>>>> Stashed changes

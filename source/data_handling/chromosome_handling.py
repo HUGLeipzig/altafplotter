@@ -27,8 +27,9 @@ def collect_chromosomes(df_altAF, add_all_string):
 def get_chromosome_lengths(df_vcf_variants):
     li_chr = []
     li_length=[]
-    chromosome_lengths = {}
+
     chr_list = set(list(df_vcf_variants["chr"]))
+    chromosomes = {}
 
     for chr in chr_list:
         df = df_vcf_variants[df_vcf_variants["chr"] == chr]
@@ -36,16 +37,13 @@ def get_chromosome_lengths(df_vcf_variants):
         first_variant = df.iloc[0]["start"]
         last_variant = df.iloc[-1]["start"]
         chr_length = last_variant-first_variant
-<<<<<<< Updated upstream
          
         li_chr.append(chr)
         li_length.append(chr_length)
-=======
-                
-        chromosome_lengths[chr] = chr_length
->>>>>>> Stashed changes
 
-    return chromosome_lengths
+    chromosomes = dict(zip(li_chr,li_length))
+
+    return chromosomes
 
 def create_overview(df_altAF, df_roh_rg):
 
@@ -66,7 +64,6 @@ def create_overview(df_altAF, df_roh_rg):
 
         # collect inheritance ratios per chromosome
         df_chr = df_altAF[df_altAF["chr"] == chromosome]
-
         mat_variants = df_chr[df_chr["snv_occurence"] == "maternal"].shape[0]
         pat_variants = df_chr[df_chr["snv_occurence"] == "paternal"].shape[0]
         notmat_variants = df_chr[df_chr["snv_occurence"] == "not maternal"].shape[0]
@@ -113,27 +110,24 @@ def create_overview(df_altAF, df_roh_rg):
 
     chr_to_drop = ["x", "X", "y", "Y", "M", "m", "MT", "mt"]
     df_overview = df_overview[~df_overview["chr"].isin(chr_to_drop)]
-<<<<<<< Updated upstream
     df_overview = df_overview[~df_overview["chr"].isna()]
 
-=======
-    df_overview["chr"] = df_overview["chr"].astype(int)
-    df_overview = df_overview.sort_values(by=['chr'])
-    df_overview["chr"] = df_overview["chr"].astype(str)
->>>>>>> Stashed changes
     return df_overview
 
 def cleanup_overview(df_overview):
     cols = list(df_overview.columns)
-    cols.remove("chr")
-    cols.remove("upd_flagging")
-    cols.remove("perc_covered_by_rohs")
+    drop_cols =["chr", "upd_flagging", "perc_covered_by_rohs"]
+    for col in drop_cols:
+        cols.remove(col)
+    
+    drop_cols = []
     for col in cols:
         if df_overview[col].sum() == 0:
+            print(f"drop {col}")
             df_overview = df_overview.drop(col, axis=1)
-    cols = list(df_overview.columns)
-    cols.remove("chr")
-    cols.remove("upd_flagging")
+            drop_cols.append(col)
+    for col in drop_cols:
+        cols.remove(col)
     return df_overview, cols
 
 def highlight_cells(val):
