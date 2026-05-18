@@ -19,7 +19,11 @@ legend_consanguinity = """
     **`>{consanguin_min_chr_count}`** chromosomes covered by **`>{consanguin_roh_cutoff}%`** ROHs
 """
 
+<<<<<<< Updated upstream
 header_flagging = "**:rainbow-flag: UPD-flags**"
+=======
+header_flagging = "**:rainbow_flag: UPD-flags**"
+>>>>>>> Stashed changes
 legend_flagging ="""
     **`roh_high`**&rarr;potential isodisomy :warning: check for deletions
 
@@ -36,9 +40,15 @@ legend_flag_settings = """
 
     **`inh_ratio_high:`**
 
+<<<<<<< Updated upstream
     *in duos:* ratio of (m/p)aternal/not (m/p)aternal SNVs per chr: **`> {inh_ratio_high_duo_cutoff}`**
 
     *in trios:* ratio of maternal/paternal (or vice versa) per chr: **`> {inh_ratio_high_trio_cutoff}`**
+=======
+    *in duos:* ratio of (m/p)aternal/not (m/p)aternal SNVs per chr: **`> {inh_ratio_high_trio_cutoff}`**
+
+    *in trios:* ratio of maternal/paternal (or vice versa) per chr: **`> {inh_ratio_high_duo_cutoff}`**
+>>>>>>> Stashed changes
 
     **ROHs:**
 
@@ -50,6 +60,7 @@ legend_flag_settings = """
 
     `insufficient_snvs`: less than **`{min_snvs_per_chr}`** SNVs for this chromosome, insufficient to reliably detect UPD features
 
+<<<<<<< Updated upstream
 """
 header_legend = "**:bar_chart: Plot legends/UPD regions**"
 yellow_squares = ":large_yellow_square: runs of homozygosity"
@@ -109,4 +120,6 @@ text_clinical_setup = """
 	For clinical use, we recommend the following setup:
 	- [Set up your your own local instance.](https://github.com/HUGLeipzig/altafplotter) Which could also be directly connected to your LIMS and bioinformatic services.
 	- Validate with your own dataset. Genetic workflows are diverse and might produce different outcomes to what we established the app with. To make sure, our settings are valid for your data, perform your own validation. [Cutoffs can then be adjusted if necessary.](https://github.com/HUGLeipzig/altafplotter/blob/c97bc690bd6f27c85232c24a932d907688385535/settings/settings.py#L93)
+=======
+>>>>>>> Stashed changes
 """

@@ -51,10 +51,28 @@ The correct values are: trio:2, duo:5**
 
 We run a local version of this tool, that is integrated with our NGS-evaluation software Varvis and our LIMS Gepado.
 
-Feel free to [contact us](mailto:hug-ito@medizin.uni-leipzig.de), if you are interested in integrating your LIMS or NGS-software.
+In order to connect Varvis:
+1. activate the respective toggle in `settings/settings.py` : `toggle_varvis = True`
+2. add your varvis credentials to: `settings/credentials.py`
 
-There is a branch available, that includes the varvis functionality, here is what you need to do to use it:
+## Build Docker
 
-1. switch branch to `varvis_release_1.x.x`
-2. `toggle_varvis` in `settings.settings` should be `True`
-3. add your varvis url and user credentials in `settings.credentials`
+You can build the docker container with:
+```
+sudo docker build --build-arg VERSION=${APP_VERSION} --tag ${APP_VERSION} .
+```
+and create the container with:
+```
+sudo docker create  \
+    -it --restart always \
+    --privileged \
+    --volume log:/var/log \
+    --env-file docker/settings-test.env \
+    --cpus 2 \
+    --memory 2G \
+    -p 8880:8880 \
+    --name altafplotter \
+    altafplotter:{tag}
+
+sudo docker run altafplotter
+```

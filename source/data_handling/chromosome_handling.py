@@ -9,24 +9,16 @@ def Set_Chr_Nr_ (Chr):
         elif Chr == 'Y': Chr = 24
         elif Chr == 'M': Chr = 25
         elif Chr == 'MT': Chr = 25
-        else: 
-            try:
-                Chr = int(Chr)
-            except:
-                pass
+        else: Chr = int(Chr)
     else:
         Chr = 0
     return Chr
 
 def collect_chromosomes(df_altAF, add_all_string):
-
     myset = set(df_altAF["chr"])
     chr_list = list(myset)
-
-    # drop all non-standard contigs
-    chr_list_clean = [a for a in chr_list if len(a) < 3]
-
-    chr_list = sorted(chr_list_clean, key=lambda x: Set_Chr_Nr_(x))
+    chr_list = sorted(chr_list, key=lambda x: Set_Chr_Nr_(x))
+    
     if add_all_string:
         chr_list.insert(0, "all chromosomes")
 
@@ -35,7 +27,7 @@ def collect_chromosomes(df_altAF, add_all_string):
 def get_chromosome_lengths(df_vcf_variants):
     li_chr = []
     li_length=[]
-
+    chromosome_lengths = {}
     chr_list = set(list(df_vcf_variants["chr"]))
 
     for chr in chr_list:
@@ -44,31 +36,20 @@ def get_chromosome_lengths(df_vcf_variants):
         first_variant = df.iloc[0]["start"]
         last_variant = df.iloc[-1]["start"]
         chr_length = last_variant-first_variant
+<<<<<<< Updated upstream
          
         li_chr.append(chr)
         li_length.append(chr_length)
+=======
+                
+        chromosome_lengths[chr] = chr_length
+>>>>>>> Stashed changes
 
-    df_chromosomes = pd.DataFrame()
-    df_chromosomes["chr"] = li_chr
-    df_chromosomes["length"] = li_length
-
-    df_chromosomes = df_chromosomes.set_index('chr')
-
-    return df_chromosomes
+    return chromosome_lengths
 
 def create_overview(df_altAF, df_roh_rg):
 
-    df_overview = pd.DataFrame(columns=[
-        "chr",
-        "mat_over_pat",
-        "mat_over_notmat",
-        "pat_over_mat",
-        "pat_over_notpat",
-        #"number_of_rohs",
-        #"total_lengths_of_rohs",
-        "perc_covered_by_rohs"
-    ])
-
+    df_overview = pd.DataFrame()
     li_mat_over_pat = []
     li_pat_over_mat = []
     li_mat_over_notmat = []
@@ -77,9 +58,9 @@ def create_overview(df_altAF, df_roh_rg):
     li_total_lengths_of_rohs = []
     li_perc_covered_by_rohs = []
 
-    chromosomes = collect_chromosomes(df_altAF, False)
-
-    df_chromosomes = get_chromosome_lengths(df_altAF)
+    #chromosomes = collect_chromosomes(df_altAF, False)
+    chromosome_lengths = get_chromosome_lengths(df_altAF)
+    chromosomes = chromosome_lengths.keys()
 
     for chromosome in chromosomes:
 
@@ -114,14 +95,12 @@ def create_overview(df_altAF, df_roh_rg):
         #collect roh sizes per chromosome
 
         df_roh_chr = df_roh_rg[df_roh_rg["chr"] == chromosome]
-        
         li_number_of_rohs.append(df_roh_chr.shape[0])
         
         total_lengths_of_rohs = df_roh_chr["length"].sum()
         li_total_lengths_of_rohs.append(total_lengths_of_rohs)
 
-        perc_covered_by_rohs = total_lengths_of_rohs / df_chromosomes.at[chromosome,"length"]
-
+        perc_covered_by_rohs = total_lengths_of_rohs / chromosome_lengths[chromosome]
         li_perc_covered_by_rohs.append(perc_covered_by_rohs)
 
     df_overview["chr"] = chromosomes
@@ -129,29 +108,29 @@ def create_overview(df_altAF, df_roh_rg):
     df_overview["mat_over_notmat"] = li_mat_over_notmat
     df_overview["pat_over_mat"] = li_pat_over_mat
     df_overview["pat_over_notpat"] = li_pat_over_notpat
-    #df_overview["number_of_rohs"] = li_number_of_rohs
-    #df_overview["total_lengths_of_rohs"] = li_total_lengths_of_rohs
-    df_overview["perc_covered_by_rohs"] = li_perc_covered_by_rohs
 
-    # remove data for X and Y chromosomes
-    df_overview.at[22, "perc_covered_by_rohs"] = 0
-    df_overview.at[23, "perc_covered_by_rohs"] = 0
+    df_overview["perc_covered_by_rohs"] = li_perc_covered_by_rohs
 
     chr_to_drop = ["x", "X", "y", "Y", "M", "m", "MT", "mt"]
     df_overview = df_overview[~df_overview["chr"].isin(chr_to_drop)]
+<<<<<<< Updated upstream
     df_overview = df_overview[~df_overview["chr"].isna()]
 
+=======
+    df_overview["chr"] = df_overview["chr"].astype(int)
+    df_overview = df_overview.sort_values(by=['chr'])
+    df_overview["chr"] = df_overview["chr"].astype(str)
+>>>>>>> Stashed changes
     return df_overview
 
 def cleanup_overview(df_overview):
-
     cols = list(df_overview.columns)
     cols.remove("chr")
     cols.remove("upd_flagging")
+    cols.remove("perc_covered_by_rohs")
     for col in cols:
         if df_overview[col].sum() == 0:
-            if col in ["mat_over_pat", "mat_over_notmat", "pat_over_mat", "pat_over_notpat"]:
-                df_overview = df_overview.drop(col, axis=1)
+            df_overview = df_overview.drop(col, axis=1)
     cols = list(df_overview.columns)
     cols.remove("chr")
     cols.remove("upd_flagging")
@@ -159,30 +138,6 @@ def cleanup_overview(df_overview):
 
 def highlight_cells(val):
     color = 'darkred' if val != [] else 'white' # Pastel blue
-    return 'background-color: {}'.format(color)
-
-def highlight_ir_cells_duo(val):
-    color = 'white' # Pastel blue
-    if val > settings.inh_ratio_high_duo_cutoff:
-        color = 'orange'
-    if val < settings.inh_ratio_low_cutoff:
-        color = 'lightblue'
-    return 'background-color: {}'.format(color)
-
-def highlight_ir_cells_trio(val):
-    color = 'white' # Pastel blue
-    if val > settings.inh_ratio_high_trio_cutoff:
-        color = 'orange'
-    if val < settings.inh_ratio_low_cutoff:
-        color = 'lightblue'
-    return 'background-color: {}'.format(color)
-
-def highlight_roh_cells(val):
-    color = 'white' # Pastel blue
-    if val > settings.roh_high_mixed_start:
-        color = 'yellow'
-    if val > settings.roh_high_cutoff:
-        color = 'orange'
     return 'background-color: {}'.format(color)
 
 def get_cutoffs():

@@ -1,4 +1,3 @@
-import os
 import json
 import pandas as pd
 import streamlit as st
@@ -7,14 +6,14 @@ import xlsxwriter
 from pyxlsb import open_workbook as open_xlsb
 
 from data_handling.graph_plotter import graph_plotter
-from settings import settings
-from settings import labels
+from settings import \
+    settings, \
+    labels
 
-if not settings.toggle_public_version:
+if settings.toggle_varvis:
     from settings import credentials as cr
     from data_handling import \
-        varvis_api, \
-        gepado
+        varvis_api
 
 from data_handling import \
     vcf_processing, \
@@ -22,9 +21,17 @@ from data_handling import \
     general_plots, \
     general_functions
 
+from helper import \
+    UrlParamReader
+
+if settings.toggle_gepado:
+    from helper import GdsReader
+    gds_reader = GdsReader.GdsReader()
+
 # =============================================================================
 # define parameters
 # =============================================================================
+
 personID = ""
 kit_selection = []
 from_vcf = False
@@ -47,11 +54,6 @@ vcf_dict = {
         "mother" : "",
         "father" : "",
 }
-vcf_upload = {
-    "index":"",
-    "mother":"",
-    "father":""
-}
 id_dict={
     "index" : "",
     "mother" : "",
@@ -71,6 +73,7 @@ st.set_page_config(
     initial_sidebar_state = settings.main_page_config["page_sidebar_state"], 
     menu_items =            settings.main_page_config["page_menu_items"]
 )
+
 # configure sidebar
 st.sidebar.markdown(labels.sidebar_title)
 st.sidebar.markdown(labels.sidebar_subtitle)
@@ -95,11 +98,8 @@ with st.sidebar.expander(labels.header_flagging):
     st.markdown(labels.legend_flagging)
 with st.sidebar.expander(labels.header_flag_settings):
     st.markdown(legend_flag_settings)
-with st.sidebar.expander(labels.header_legend):
-    st.markdown(labels.yellow_squares)
-    st.markdown(labels.purple_squares)
-    st.code(labels.upd_regions)
 
+<<<<<<< Updated upstream
 
 
 with st.sidebar:
@@ -119,6 +119,8 @@ with st.sidebar.expander(labels.header_clinical_setup):
     st.markdown(labels.text_clinical_setup)
 
 
+=======
+>>>>>>> Stashed changes
 # =============================================================================
 # web flow
 # =============================================================================
@@ -126,12 +128,12 @@ with st.sidebar.expander(labels.header_clinical_setup):
 # initialize session state
 general_functions.initialize_session_state()
 
-if not settings.toggle_public_version:
+if settings.toggle_gepado:
     # collect person ID from URL params
-    session_guid = gepado.get_url_param(cr.varvis_param)
-    if not session_guid == "no person ID in params":
+    analysis_guid = UrlParamReader.get_url_param(settings.url_param)
+    if not analysis_guid == "no person ID in params":
         # get person ID from Gepado
-        id_dict["index"] = gepado.get_person_from_an_guid(cr.gep_db_server, cr.gep_db, cr.gep_user, cr.gep_password, session_guid)
+        id_dict["index"] = gds_reader.get_person_from_an_guid(analysis_guid)
         # primer go button to start execution with gepado person ID
         st.session_state["check_analyses"] = True
     else:
@@ -141,7 +143,7 @@ if not settings.toggle_public_version:
 vcf_input_container = st.container()
 
 with vcf_input_container.expander("select input options", expanded=True):
-    if settings.toggle_public_version:
+    if not settings.toggle_varvis:
         tabs = settings.public_tabs
         vcf_tab = 0
         demo_tab = 1
@@ -152,19 +154,39 @@ with vcf_input_container.expander("select input options", expanded=True):
 
     input_tabs= st.tabs(tabs)
     
-    if not settings.toggle_public_version:
-        varvis_cols =  input_tabs[0].columns([6,1,6,1,6,10])
+    if settings.toggle_varvis:
+        with input_tabs[0]:
+            instance_selection_cols = st.columns([1,15])
+            varvis_instance = instance_selection_cols[0].selectbox(
+                "select instance",
+                ["hg38", "hg19"],
+                on_change=general_functions.delete_varvis_session_id())
+            if varvis_instance == "hg38":
+                varvis_credentials = cr.varvis_hg38_credentials
+            elif varvis_instance == "hg19":
+                varvis_credentials = cr.varvis_hg19_credentials
+
+        varvis_cols =  st.columns([6,1,6,1,6,10])
         with varvis_cols[0]:
-            id_dict["index"] = st.text_input("Index ID", id_dict["index"]).replace(" ", "")
+
+            id_dict["index"] = st.text_input("Index ID", id_dict["index"])
+
             if id_dict["index"]:
                 check_analyses = True
+                id_dict["index"].strip()
+                if settings.toggle_gepado:
+                    id_dict["mother"], id_dict["father"] = gds_reader.collect_parents(id_dict["index"])
             else:
                 st.warning("index ID required")
 
         with varvis_cols[2]:
-            id_dict["mother"] = st.text_input("mother ID", id_dict["mother"]).replace(" ", "")
+            id_dict["mother"] = st.text_input("mother ID", id_dict["mother"])
+            if id_dict["mother"]:
+                id_dict["mother"] = id_dict["mother"].strip()
         with varvis_cols[4]:
-            id_dict["father"] = st.text_input("father ID", id_dict["father"]).replace(" ", "")
+            id_dict["father"] = st.text_input("father ID", id_dict["father"])
+            if id_dict["father"]:
+                id_dict["father"] = id_dict["father"].strip()
 
         if id_dict != st.session_state["id_dict"]:
             st.session_state["get_vcfs"] = False
@@ -175,16 +197,22 @@ with vcf_input_container.expander("select input options", expanded=True):
 # =============================================================================
 # Varvis setup
 # =============================================================================
-if not settings.toggle_public_version:
+if settings.toggle_varvis:
     if not st.session_state["session_id"]:
-        st.session_state["session_id"] = varvis_api.varvis_api_login(cr.varvis_target, cr.varvis_user, cr.varvis_password)
+        st.session_state["session_id"] = varvis_api.varvis_api_login(
+            varvis_credentials["target"],
+            varvis_credentials["user_name"],
+            varvis_credentials["password"]
+        )
     session_id = st.session_state["session_id"]
 
     if id_dict["index"]:
-        response = varvis_api.get_analyses_per_person(id_dict["index"], session_id, cr.varvis_target)
+        response = varvis_api.get_analyses_per_person(id_dict["index"], session_id, varvis_credentials["target"])
         if response.status_code == 200:
             df_analyses = pd.DataFrame(json.loads(response.text))
             df_snvs_index = df_analyses.loc[df_analyses['analysisType'] == "SNV"]
+
+            df_snvs_index = df_snvs_index[~df_snvs_index["enrichmentKitName"].isin(settings.unwanted_enrichment_kits)]
         
             with varvis_cols[0]:
                 kit_selection = st.selectbox("pick enrichment kit", df_snvs_index["enrichmentKitName"], index=0, key="index_kit")
@@ -195,26 +223,27 @@ if not settings.toggle_public_version:
             st.stop()
 
     if id_dict["mother"]:
-        response = varvis_api.get_analyses_per_person(id_dict["mother"], session_id, cr.varvis_target)
+        response = varvis_api.get_analyses_per_person(id_dict["mother"], session_id, varvis_credentials["target"])
         if response.status_code == 200:
             df_analyses = pd.DataFrame(json.loads(response.text))
             df_snvs_mother = df_analyses.loc[df_analyses['analysisType'] == "SNV"]
-        
+            df_snvs_mother = df_snvs_mother[~df_snvs_mother["enrichmentKitName"].isin(settings.unwanted_enrichment_kits)]
+
             with varvis_cols[2]:
                 kit_selection = st.selectbox("pick enrichment kit", df_snvs_mother["enrichmentKitName"], index=0, key="mother_kit")
                 df_analysis = df_snvs_mother.loc[df_snvs_mother['enrichmentKitName'] == kit_selection] 
                 analyses_id["analysis_id_mother"] = str(df_analysis.iloc[0]["id"])
 
         else:
-            st.warning("Error while obtaining analyses from varvis: " + str(response.status_code))
-            
-            st.stop()  
-
+            with varvis_cols[2]:
+                st.warning("Error while obtaining analyses from varvis: " + str(response.status_code))
+    
     if id_dict["father"]:
-        response = varvis_api.get_analyses_per_person(id_dict["father"], session_id, cr.varvis_target)
+        response = varvis_api.get_analyses_per_person(id_dict["father"], session_id, varvis_credentials["target"])
         if response.status_code == 200:
             df_analyses = pd.DataFrame(json.loads(response.text))
             df_snvs_father = df_analyses.loc[df_analyses['analysisType'] == "SNV"]
+            df_snvs_father = df_snvs_father[~df_snvs_father["enrichmentKitName"].isin(settings.unwanted_enrichment_kits)]
         
             with varvis_cols[4]:
                 kit_selection = st.selectbox("pick enrichment kit", df_snvs_father["enrichmentKitName"], index=0, key="father_kit")
@@ -222,8 +251,9 @@ if not settings.toggle_public_version:
                 analyses_id["analysis_id_father"] = str(df_analysis.iloc[0]["id"])
 
         else:
-            st.warning("Error while obtaining analyses from varvis: " + str(response.status_code))
-            st.stop()  
+            with varvis_cols[4]:
+                st.warning("Error while obtaining analyses from varvis: " + str(response.status_code))
+            
 
     if "analysis_id_index" in analyses_id:
         if analyses_id["analysis_id_index"]:
@@ -235,13 +265,13 @@ if not settings.toggle_public_version:
         vcf_list = []
 
         if analyses_id["analysis_id_index"]:
-            vcf_dict["index"] = varvis_api.download_vcf(analyses_id["analysis_id_index"], session_id, cr.varvis_target)
+            vcf_dict["index"] = varvis_api.download_vcf(analyses_id["analysis_id_index"], session_id, varvis_credentials["target"])
 
         if analyses_id["analysis_id_mother"]:
-            vcf_dict["mother"] = varvis_api.download_vcf(analyses_id["analysis_id_mother"], session_id, cr.varvis_target)
+            vcf_dict["mother"] = varvis_api.download_vcf(analyses_id["analysis_id_mother"], session_id, varvis_credentials["target"])
         
         if analyses_id["analysis_id_father"]:
-            vcf_dict["father"] = varvis_api.download_vcf(analyses_id["analysis_id_father"], session_id, cr.varvis_target)
+            vcf_dict["father"] = varvis_api.download_vcf(analyses_id["analysis_id_father"], session_id, varvis_credentials["target"])
 
         # get snv origin if at least one parent is given
         if (vcf_dict["index"] and vcf_dict["mother"]) or (vcf_dict["index"] and vcf_dict["father"]):
@@ -255,39 +285,45 @@ if not settings.toggle_public_version:
 # =============================================================================
 # vcf upload
 # =============================================================================
-
 with input_tabs[vcf_tab]:
     vcf_file_cols =  input_tabs[vcf_tab].columns([4,1,4,1,4])
     with vcf_file_cols[0]:
         st.write("Child vcf-file")
+<<<<<<< Updated upstream
         vcf_upload["index"] = st.file_uploader("upload .vcf file", type=[".vcf.gz"],accept_multiple_files=False, key="vcf_index")
         if vcf_upload["index"]:
             from_vcf = True
             vcf_dict["index"] = vcf_processing.save_temporary_file(vcf_upload["index"])
             
             st.markdown("<div style='width: 1px; height: 28px'></div>", unsafe_allow_html=True)
+=======
+        vcf_file_index = st.file_uploader("upload .vcf file", type=[".vcf.gz"],accept_multiple_files=False, key="vcf_index")
+        if vcf_file_index:
+            from_vcf = True            
+            vcf_dict["index"] = vcf_processing.save_temporary_file(vcf_file_index)
+>>>>>>> Stashed changes
             plot_vcf = st.button("plot vcf")
         else:
             st.warning("index vcf required")
 
     with vcf_file_cols[2]:
         st.write("Mother vcf-file")
-        vcf_upload["mother"] = st.file_uploader("upload .vcf file", type=[".vcf", ".vcf.gz"],accept_multiple_files=False, key="vcf_mother")
-        if vcf_upload["mother"]:
-            vcf_dict["mother"] = vcf_processing.save_temporary_file(vcf_upload["mother"])
+        vcf_file_mother = st.file_uploader("upload .vcf file", type=[".vcf", ".vcf.gz"],accept_multiple_files=False, key="vcf_mother")
+        if vcf_file_mother:
+            vcf_dict["mother"] = vcf_processing.save_temporary_file(vcf_file_mother)
             
     with vcf_file_cols[4]:
         st.write("Father vcf-file")
-        vcf_upload["father"] = st.file_uploader("upload .vcf file", type=[".vcf", ".vcf.gz"],accept_multiple_files=False, key="vcf_father")
-        if vcf_upload["father"]:    
-            vcf_dict["father"] = vcf_processing.save_temporary_file(vcf_upload["father"])
+        vcf_file_father = st.file_uploader("upload .vcf file", type=[".vcf", ".vcf.gz"],accept_multiple_files=False, key="vcf_father")
+        if vcf_file_father:    
+            vcf_dict["father"] = vcf_processing.save_temporary_file(vcf_file_father)
 
     # check for changes and reset session state
-    if vcf_upload != st.session_state["vcf_upload"]:
+    if vcf_dict != st.session_state["vcf_dict"]:
         st.session_state["plot_vcf"] = False
-        st.session_state["vcf_upload"] = vcf_upload
+        st.session_state["vcf_dict"] = vcf_dict
     else:
-        st.session_state["vcf_upload"] = vcf_upload
+        st.session_state["vcf_dict"] = vcf_dict
 
 if plot_vcf or st.session_state["plot_vcf"]:
     st.session_state["plot_vcf"] = True
@@ -342,9 +378,7 @@ if not df_altAF.empty:
     # ROH detection
     if df_roh_rg.empty:
         df_roh_rg = vcf_processing.detect_roh(vcf_dict["index"])
-        if df_roh_rg.empty:
-            st.error("unable to process vcf file with bcftools roh, please check your file or [inform us.](https://github.com/HUGLeipzig/altafplotter/issues)")
-
+ 
     # gather chromosome numbers for dropdown
     chr_list = chromosome_handling.collect_chromosomes(df_altAF, True)  
     
@@ -356,16 +390,17 @@ if not df_altAF.empty:
     
     # create overview table
     df_cutoffs = chromosome_handling.get_cutoffs()
-
     df_overview = chromosome_handling.create_overview(df_altAF, df_roh_rg)
-    df_overview, consanguin, li_collaps_tags = chromosome_handling.flagging(df_overview, df_altAF_mod)
 
+    df_overview, consanguin, li_collaps_tags = chromosome_handling.flagging(df_overview, df_altAF_mod)
+        
     df_overview, style_cols = chromosome_handling.cleanup_overview(df_overview)
-    
+
     st.write("### Chromosome overview (excluding X,Y,M)")
     col_overview = st.columns([1,1,1])
     with col_overview[0]:
         
+<<<<<<< Updated upstream
         df_overview_flagged = df_overview[df_overview["upd_flagging"].str.len() != 0]
         upd_summary_list = []
 
@@ -387,45 +422,28 @@ if not df_altAF.empty:
 
 
         upd_flag_summary = "**UPD-flag summary**\n\n"
+=======
+>>>>>>> Stashed changes
         if consanguin:
-            upd_flag_summary += settings.consanguinity_warning
+            st.warning(settings.consanguinity_warning)
         else:
-            upd_flag_summary += settings.no_consanguinity
-
-        if len(upd_summary_list) != 0:
-            upd_flag_summary += "\n\n".join(upd_summary_list)
-
-            st.warning(upd_flag_summary)
+            st.info(settings.no_consanguinity)
+        if li_collaps_tags:
+            st.warning("following UPD-flags have been raised: **" + str(li_collaps_tags) + "**")
         else:
-            upd_flag_summary += "no UPD flags raised"
-            st.success(upd_flag_summary)
-            
-            
-        styled_df = df_overview.style.applymap(
-                chromosome_handling.highlight_cells, subset=["upd_flagging"]
-                )
-        
-
-        ir_columns = [x for x in styled_df.columns if "_over_" in x]
-        if "mat_over_notmat" in ir_columns or "pat_over_notpat" in ir_columns:
-            # duo setup
-            styled_df = styled_df.applymap(
-                    chromosome_handling.highlight_ir_cells_duo, subset=ir_columns
-                    )
-        elif "mat_over_pat" in ir_columns:
-            styled_df = styled_df.applymap(
-                    chromosome_handling.highlight_ir_cells_trio, subset=ir_columns
-                    )
-
-        styled_df = styled_df.applymap(
-                chromosome_handling.highlight_roh_cells, subset=["perc_covered_by_rohs"]
-                )
+            st.info("No UPD-flags have been raised.")
 
         st.dataframe(
-            data = styled_df,
-            use_container_width=True,
-            hide_index=True
-        )
+            data=df_overview.style.background_gradient(
+                cmap="OrRd",
+                subset=style_cols
+                ).map(
+                    chromosome_handling.highlight_cells,
+                    subset=["upd_flagging"]
+                ),
+                use_container_width=True,
+                hide_index=True
+            )
 
         select_chr = st.selectbox("Select chromosome", chr_list, st.session_state["chr_sel_index"])
         
@@ -451,17 +469,7 @@ if not df_altAF.empty:
         df_plot = graph_plotter.set_and_filter_single_chr(select_chr)
 
         df_roh_rg_plot = df_roh_rg[df_roh_rg["chr"] == select_chr]
-        st.altair_chart(
-            graph_plotter.draw_chr_altair(
-                df_plot,
-                df_roh_rg_plot,
-                select_chr,
-                domain_setting,
-                1800,
-                800,
-                assembly
-            )
-        )
+        st.altair_chart(graph_plotter.draw_chr_altair(df_plot, df_roh_rg_plot, select_chr, domain_setting, 1800, 800))
         st.write("RoH:")
         st.write(df_roh_rg_plot)
 
@@ -472,50 +480,26 @@ if not df_altAF.empty:
         li_chr = []
         li_mat_over_pat = []
         li_notmat_over_pat = []
-        c = 1
         plots = []
 
-        for chromosome in chr_list_plot:
+        for c, chromosome in enumerate(chr_list_plot):
             
             chr_str = chromosome
             df_plot = graph_plotter.set_and_filter_single_chr(chromosome)
             df_roh_rg_plot = df_roh_rg[df_roh_rg["chr"] == chromosome]
 
-            if c == 1:
-                plot = graph_plotter.draw_chr_altair(
-                    df_plot,
-                    df_roh_rg_plot,
-                    chromosome,
-                    domain_setting,
-                    400,
-                    200,
-                    assembly
-                )
-            elif c in [5, 9, 13, 17, 21, 24]:
+
+            if c == 0:
+                plot = graph_plotter.draw_chr_altair(df_plot, df_roh_rg_plot, chromosome, domain_setting, 400, 200)
+            elif c in [4, 8, 12, 16, 20, 23]:
                 plots.append(plot)
-                plot = graph_plotter.draw_chr_altair(
-                    df_plot,
-                    df_roh_rg_plot,
-                    chromosome,
-                    domain_setting,
-                    400,
-                    200,
-                    assembly
-                )
+                plot = graph_plotter.draw_chr_altair(df_plot, df_roh_rg_plot, chromosome, domain_setting, 400, 200)
             else:
-                plot = alt.hconcat(
-                    plot,
-                    graph_plotter.draw_chr_altair(
-                        df_plot,
-                        df_roh_rg_plot,
-                        chromosome,
-                        domain_setting,
-                        400,
-                        200,
-                        assembly
-                    )
-                )
-            c+=1
+                plot = alt.hconcat(plot, graph_plotter.draw_chr_altair(df_plot, df_roh_rg_plot, chromosome, domain_setting, 400, 200))
+            
+            # last element reached:
+            if (c == len(chr_list_plot)-1) and (c not in [4, 8, 12, 16, 20, 23]):
+                plots.append(plot)
 
         for plot in plots:
             st.altair_chart(plot)
@@ -526,6 +510,5 @@ if not df_altAF.empty:
                                 data=df_xlsx,
                                 file_name= 'altAF.xlsx')
 
-    if settings.toggle_public_version:
-        general_functions.delete_vcfs(vcf_dict)
-
+    if settings.toggle_delete_vcfs:
+        general_functions.delete_vcfs(vcf_dict)     

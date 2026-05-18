@@ -1,4 +1,3 @@
-
 import altair as alt
 import pandas as pd
 
@@ -90,8 +89,8 @@ def roh_inh_scatter(df, df_cutoffs):
     return plot
 
 def create_roh_plot(df, df_cutoffs, chr_list):
-    
-    df["upd_flagging"] = [",".join(x) for x in df["upd_flagging"]]
+    df["upd_flagging"] = [",".join(flags) for flags in df["upd_flagging"].to_list()]
+    df["upd_flagging"] = df["upd_flagging"].replace("", "no flags")
     
     roh_plot = alt.Chart(df).mark_circle(size=120).encode(
         alt.X('chr:N', title='chromosome',
@@ -101,13 +100,15 @@ def create_roh_plot(df, df_cutoffs, chr_list):
             clamp=True),
             title="percentage covered by rohs"),
         tooltip=["chr", "perc_covered_by_rohs", "upd_flagging"],
-        color=alt.Color('upd_flagging:N',
-                        legend=alt.Legend(
-                        orient='none',
-                        legendX=130, legendY=-70,
-                        direction='horizontal',
-                        titleAnchor='middle')
-                        ),
+        color=alt.Color(
+            'upd_flagging:N',
+            legend=alt.Legend(
+                orient='none',
+                legendX=130, legendY=-70,
+                direction='horizontal',
+                titleAnchor='middle'
+            )
+        ),
     ).properties(
         width=600,
         height=600,
@@ -126,5 +127,5 @@ def create_roh_plot(df, df_cutoffs, chr_list):
             y2 = "roh_high_mixed_end"
         )
     plot = roh_plot + roh_high_rect + roh_mixed_rect
-    
+
     return plot

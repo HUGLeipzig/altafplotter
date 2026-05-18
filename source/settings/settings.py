@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 
 # featrue toggle for public version
 # if true:
@@ -55,6 +56,57 @@ else:
     }
 
 # domain setting for altair
+=======
+import os
+# feature toggle for varvis and gepado
+toggle_varvis = False
+toggle_gepado = False
+toggle_delete_vcfs = True
+
+url_param = "querystring"
+
+DEV = os.environ.get("LOCAL_DEV", "True").lower() in ('true')
+
+# GDS-API
+gds_api_base_url = os.environ.get("API_BASE_URL", "")
+
+analysis_id_endpoint = "analysis/{analysis_guid}/analysis_id_from_guid"
+person_id_from_analysis_id_endpoint = "analysis/{analysis_id}/person_id_from_analysis_id"
+family_id_endpoint = "person/{person_id}/family_id"
+family_members_endpoint = "/family/{family_id}/family_members"
+person_status_endpoint = "/person/{person_id}/status"
+
+# streamlit page config
+main_page_config = {
+    "page_title" :          "altAF-plotter",
+    "page_icon" :           "🦔",
+    "page_layout" :         "wide",
+    "page_sidebar_state" :  "auto",
+    "page_menu_items" : {
+        "Get help":     "https://github.com/maxmilianr/altafplotter_public/blob/main/user_guideline/user_guideline.md",
+        "Report a Bug": "https://github.com/maxmilianr/altafplotter_public/issues",
+        "About" :       """
+            publication link, coming soon
+            https://github.com/maxmilianr/altafplotter_public
+            
+            [Narasimhan V, Danecek P, Scally A, Xue Y, Tyler-Smith C, and Durbin R. BCFtools/RoH: a hidden Markov model approach for detecting autozygosity from next-generation sequencing data. Bioinformatics (2016) 32(11) 1749-51](https://pubmed.ncbi.nlm.nih.gov/28205675/)
+            
+            [Danecek P, Bonfield JK, et al. Twelve years of SAMtools and BCFtools. Gigascience (2021) 10(2):giab008](https://pubmed.ncbi.nlm.nih.gov/33590861/)
+            
+            The Institute for Human Genetics (University Medical Center Leipzig) makes no representation about the suitability or accuracy of this software or data for any purpose, and makes no warranties, including fitness for a particular purpose or that the use of this software will not infringe any third party patents, copyrights, trademarks or other rights.
+            Responsible for this project:
+            Maximilian Radtke (maximilian.radtke@medizin.uni-leipzig.de)
+            Address:
+            Sekretariat\n
+            Philipp-Rosenthal-Str. 55\n
+            04103 Leipzig\n
+            GERMANY\n
+            Telefon: 0341 - 97 23800
+        """
+    }
+}
+
+>>>>>>> Stashed changes
 
 dict_domain = {
     "single" : ["unknown"],
@@ -101,7 +153,10 @@ roh_high_mixed_end = 0.7
 
 inh_ratio_high_trio_cutoff = 2
 inh_ratio_high_duo_cutoff = 5
+<<<<<<< Updated upstream
 inh_ratio_low_cutoff = 0.5
+=======
+>>>>>>> Stashed changes
 
 consanguin_min_chr_count = 3
 consanguin_roh_cutoff = 0.1
@@ -116,6 +171,7 @@ consanguin_tag = "likely_consanguineous"
 not_consanguin_tag = "unlikely_consanguineous"
 snv_per_chr_warning = "insufficient_snvs"
 
+<<<<<<< Updated upstream
 consanguinity_warning = "Consanguinity likely, handle potential UPD flags with extra care.\n\n"
 no_consanguinity = "Consanguinity unlikely.\n\n"
 
@@ -135,3 +191,19 @@ demo_vcf_file = "data/demo_files/vcfs/HG001_GRCh38_1_22_v4.2.1_exome.vcf.gz"
 demo_altaf = "data/demo_files/csvs/demo_altaf.csv"
 demo_origin = "data/demo_files/csvs/demo_origin.csv"
 demo_roh = "data/demo_files/csvs/demo_roh.csv"
+=======
+consanguinity_warning = "Consanguinity likely, handle potential UPD flags with extra care."
+no_consanguinity = "Consanguinity unlikely"
+
+demo_altaf = "settings/demo_files/demo_altaf.csv"
+demo_origin = "settings/demo_files/demo_origin.csv"
+demo_roh = "settings/demo_files/demo_roh.csv"
+
+public_tabs = ["vcf Upload", "Demo"]
+hug_tabs = ["Varvis", "vcf Upload", "Demo"]
+
+unwanted_enrichment_kits = [
+    "MT Chromosom 100bp regions",
+    "Nimagen HEST v2"
+]
+>>>>>>> Stashed changes
